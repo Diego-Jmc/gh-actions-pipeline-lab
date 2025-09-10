@@ -1,0 +1,53 @@
+name: PR Review with ChatGPT (script.py only)
+
+on:
+  pull_request:
+    types: [main]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get diff only for script.py
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git diff origin/${{ github.base_ref }}... -- script.py > pr_diff.txt
+
+      - name: Skip if no changes in script.py
+        id: check_diff
+        run: |
+          if [ ! -s pr_diff.txt ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Call OpenAI API for review
+        if: steps.check_diff.outputs.skip != 'true'
+        id: chatgpt
+        run: |
+          RESPONSE=$(curl https://api.openai.com/v1/chat/completions \
+            -s \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
+            -d "{
+              \"model\": \"gpt-5\",
+              \"messages\": [
+                {\"role\": \"system\", \"content\": \"Eres un revisor de código experto en Python. Haz comentarios constructivos y señala mejoras, enfocándote en buenas prácticas y legibilidad.\"},
+                {\"role\": \"user\", \"content\": \"Aquí está el diff de script.py en el Pull Request:\n$(cat pr_diff.txt)\"}
+              ]
+            }")
+
+          echo "review<<EOF" >> $GITHUB_OUTPUT
+          echo "$RESPONSE" | jq -r '.choices[0].message.content' >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR
+        if: steps.check_diff.outputs.skip != 'true'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: |
+            🤖 **ChatGPT Review (solo script.py)**
+            ${{ steps.chatgpt.outputs.review }}
