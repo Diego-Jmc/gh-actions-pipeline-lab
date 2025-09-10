@@ -3,7 +3,6 @@ from unittest.mock import patch
 import builtins
 import random
 
-
 from script import startGame, gen_random_number
 
 def test_gen_random_number_range():
@@ -11,7 +10,6 @@ def test_gen_random_number_range():
     for _ in range(50):
         num = gen_random_number(1, 10)
         assert 1 <= num <= 10
-
 
 def test_startGame_loses(capsys):
     """Prueba cuando el usuario NO adivina el número"""
