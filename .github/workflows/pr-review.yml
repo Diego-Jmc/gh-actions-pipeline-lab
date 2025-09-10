@@ -12,9 +12,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Trae todo el historial por si se necesita
+
+      - name: Check if script.py exists
+        id: check_file
+        run: |
+          if [ -f script.py ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Call OpenAI API for review
-        if: steps.check_diff.outputs.skip != 'true'
+        if: steps.check_file.outputs.exists == 'true'
         id: chatgpt
         run: |
           RESPONSE=$(curl https://api.openai.com/v1/chat/completions \
@@ -25,7 +36,7 @@ jobs:
               \"model\": \"gpt-5\",
               \"messages\": [
                 {\"role\": \"system\", \"content\": \"Eres un revisor de código experto en Python. Haz comentarios constructivos y señala mejoras, enfocándote en buenas prácticas y legibilidad.\"},
-                {\"role\": \"user\", \"content\": \"Aquí está el diff de script.py en el Pull Request:\n$(cat pr_diff.txt)\"}
+                {\"role\": \"user\", \"content\": \"Aquí está el contenido de script.py en el Pull Request:\n$(cat script.py)\"}
               ]
             }")
 
@@ -34,7 +45,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Comment on PR
-        if: steps.check_diff.outputs.skip != 'true'
+        if: steps.check_file.outputs.exists == 'true'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           message: |
