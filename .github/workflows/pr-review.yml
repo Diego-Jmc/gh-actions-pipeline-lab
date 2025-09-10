@@ -2,7 +2,8 @@ name: PR Review with ChatGPT (script.py only)
 
 on:
   pull_request:
-    types: [main]
+    branches:
+      - main
 
 jobs:
   review:
