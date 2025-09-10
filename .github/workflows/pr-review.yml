@@ -9,6 +9,7 @@ jobs:
   review:
     runs-on: ubuntu-latest
     environment: OPENAI_API_KEY
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,22 +28,21 @@ jobs:
       - name: Call OpenAI API for review
         if: steps.check_file.outputs.exists == 'true'
         id: chatgpt
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           RESPONSE=$(curl https://api.openai.com/v1/chat/completions \
             -s \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
-            -d "{
-              \"model\": \"gpt-5\",
-              \"messages\": [
-                {\"role\": \"system\", \"content\": \"Eres un revisor de código experto en Python. Haz comentarios constructivos y señala mejoras, enfocándote en buenas prácticas y legibilidad.\"},
-                {\"role\": \"user\", \"content\": \"Aquí está el contenido de script.py en el Pull Request:\n$(cat script.py)\"}
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -d '{
+              "model": "gpt-5",
+              "messages": [
+                {"role": "system", "content": "Eres un revisor de código experto en Python. Haz comentarios constructivos y señala mejoras, enfocándote en buenas prácticas y legibilidad."},
+                {"role": "user", "content": "'"$(cat script.py)"'"}
               ]
-            }")
+            }')
 
-          echo "review<<EOF" >> $GITHUB_OUTPUT
-          echo "$RESPONSE" | jq -r '.choices[0].message.content' >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Comment on PR
         if: steps.check_file.outputs.exists == 'true'
