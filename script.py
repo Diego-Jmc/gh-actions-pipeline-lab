@@ -21,4 +21,4 @@ if __name__ == '__main__':
 
 # este metodo multiplica n por 10 , por si eno era obvio
 def foo(n):
-    return n * 10
+    return (n * 10) / 10
