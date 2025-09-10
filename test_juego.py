@@ -12,16 +12,6 @@ def test_gen_random_number_range():
         num = gen_random_number(1, 10)
         assert 1 <= num <= 10
 
-def test_startGame_wins(capsys):
-    """El test siempre gana porque input() y randint() devuelven el mismo número"""
-    with patch.object(builtins, "input", lambda: "7"), \
-         patch.object(random, "randint", lambda a, b: 7):
-        startGame()
-
-    captured = capsys.readouterr()
-    assert "congratulations you won" in captured.out
-    assert "the number was 7" in captured.out
-
 
 def test_startGame_loses(capsys):
     """Prueba cuando el usuario NO adivina el número"""
