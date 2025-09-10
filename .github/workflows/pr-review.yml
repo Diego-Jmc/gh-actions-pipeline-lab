@@ -13,18 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Get diff only for script.py
-        run: |
-          git fetch origin ${{ github.base_ref }}
-          git diff origin/${{ github.base_ref }}... -- script.py > pr_diff.txt
-
-      - name: Skip if no changes in script.py
-        id: check_diff
-        run: |
-          if [ ! -s pr_diff.txt ]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-          fi
-
       - name: Call OpenAI API for review
         if: steps.check_diff.outputs.skip != 'true'
         id: chatgpt
